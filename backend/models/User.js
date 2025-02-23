@@ -5,7 +5,7 @@ const UserSchema = new mongoose.Schema({
   userId: {
     type: String,
     unique: true,
-    required: false, // Changed to false since it’s set after initial save
+    required: false, 
   },
   name: { 
     type: String, 
@@ -24,7 +24,7 @@ const UserSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Function to generate user ID
+
 UserSchema.statics.generateUserId = async function () {
   try {
     const count = await this.countDocuments();
@@ -37,7 +37,7 @@ UserSchema.statics.generateUserId = async function () {
   }
 };
 
-// Hash password before saving
+
 UserSchema.pre('save', async function (next) {
   try {
     if (this.isModified('password')) {
@@ -52,7 +52,7 @@ UserSchema.pre('save', async function (next) {
   }
 });
 
-// Method to compare passwords
+
 UserSchema.methods.matchPassword = async function (enteredPassword) {
   try {
     return await bcrypt.compare(enteredPassword, this.password);

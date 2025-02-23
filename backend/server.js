@@ -8,17 +8,17 @@ dotenv.config();
 
 const app = express();
 
-// CORS configuration
+
 app.use(cors({
-  origin: 'http://localhost:5173', // Your Vite frontend URL
+  origin: 'http://localhost:5173',
   credentials: true
 }));
 
-// Body parser
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Connect to database
+
 connectDB();
 
 // Routes

@@ -10,10 +10,10 @@ const orderSchema = new mongoose.Schema({
       quantity: { type: Number, required: true },
     },
   ],
-  shippingAddress: { type: String, required: true }, // Changed to string to match controller
-  totalPrice: { type: Number, required: true }, // Renamed from total to match controller
+  shippingAddress: { type: String, required: true }, 
+  totalPrice: { type: Number, required: true }, 
   paymentStatus: { type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' },
-  orderStatus: { type: String, default: 'Pending' }, // Added as used in controller
+  orderStatus: { type: String, default: 'Pending' }, 
   stripeSessionId: { type: String },
   createdAt: { type: Date, default: Date.now },
 });

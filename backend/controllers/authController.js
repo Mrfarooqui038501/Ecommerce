@@ -6,14 +6,14 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // Validate input
+    
     if (!name || !email || !password) {
       return res.status(400).json({ 
         message: 'Please provide all required fields' 
       });
     }
 
-    // Check email format
+    
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ 
@@ -21,7 +21,7 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Check if user already exists
+   
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ 
@@ -29,29 +29,29 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Create new user without userId initially
+    
     user = new User({
       name,
       email,
-      password, // Middleware will hash this
+      password, 
     });
 
-    // Save user (initial save without userId)
+    
     await user.save();
     console.log('User saved successfully:', { id: user._id });
 
-    // Generate and assign userId after successful save
+    
     const userId = await User.generateUserId();
     user.userId = userId;
-    await user.save(); // Save again with userId
+    await user.save(); 
     console.log('User updated with userId:', userId);
 
-    // Check JWT_SECRET
+    
     if (!process.env.JWT_SECRET) {
       throw new Error('JWT_SECRET is not defined in environment variables');
     }
 
-    // Create token
+    
     const token = jwt.sign(
       { id: user._id }, 
       process.env.JWT_SECRET,
@@ -114,7 +114,7 @@ exports.login = async (req, res) => {
       token,
       user: {
         id: user._id,
-        userId: user.userId || 'Not assigned yet', // Handle existing users without userId
+        userId: user.userId || 'Not assigned yet', 
         name: user.name,
         email: user.email,
       },

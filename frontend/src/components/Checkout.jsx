@@ -29,13 +29,13 @@ const Checkout = ({ cart, setCart }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Reset cart state
+      
       setCart({ items: [], total: 0 });
       
-      // Clear cart in local storage
+      
       localStorage.removeItem('cart');
       
-      // Redirect to order success page
+      
       navigate('/order-success', { 
         state: { orderId: response.data._id } 
       });

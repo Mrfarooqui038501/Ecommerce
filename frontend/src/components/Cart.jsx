@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
-import ShippingDetails from './ShippingDetails '; // Adjust the import path as needed
+import ShippingDetails from './ShippingDetails'; 
 
-// Initialize Stripe with your public key
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const Cart = () => {
@@ -26,7 +25,6 @@ const Cart = () => {
   useEffect(() => {
     fetchCart();
 
-    // Set up real-time updates
     const interval = setInterval(fetchCart, 5000);
     return () => clearInterval(interval);
   }, []);
@@ -45,9 +43,7 @@ const Cart = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (response.data) {
-        setCart(response.data);
-      }
+      setCart(response.data);
     } catch (error) {
       console.error('Error fetching cart:', error);
       setError('Error fetching cart. Please try again.');
@@ -186,7 +182,8 @@ const Cart = () => {
       );
 
       if (response.data.url) {
-        // Store order details temporarily in localStorage (optional, for demo)
+        // Optimistically clear the cart state before redirect
+        setCart({ items: [], total: 0 });
         localStorage.setItem(
           'orderDetails',
           JSON.stringify({
@@ -250,6 +247,8 @@ const Cart = () => {
                 <div className="flex-grow">
                   <h3 className="font-bold text-xl mb-2">{item.product.name}</h3>
                   <p className="text-gray-600">{item.product.description}</p>
+                  <p className="text-gray-600">Product ID: {item.product._id}</p>
+                  <p className="text-gray-600">User ID: {item.userId}</p>
                   <p className="font-bold text-lg mt-2">
                     ₹{(item.product.price * item.quantity).toFixed(2)}
                   </p>

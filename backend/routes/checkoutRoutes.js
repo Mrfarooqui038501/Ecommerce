@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { protect } = require('../middleware/authMiddleware');
-const Order = require('../models/Order'); // Assuming you have an Order model
+const Order = require('../models/Order');
+const Cart = require('../models/Cart');
 
 router.post('/create-session', protect, async (req, res) => {
   try {
@@ -12,17 +13,43 @@ router.post('/create-session', protect, async (req, res) => {
       return res.status(400).json({ message: 'Invalid cart items' });
     }
 
-    if (!shippingDetails || typeof shippingDetails !== 'object') {
-      return res.status(400).json({ message: 'Invalid shipping details' });
+    if (!shippingDetails) {
+      return res.status(400).json({ message: 'Shipping details are required' });
     }
 
     console.log('Creating checkout session with items:', items);
 
-    const lineItems = items.map((item) => {
-      if (!item.product || typeof item.product.price !== 'number' || !item.quantity) {
+    // Calculate totalPrice from items
+    const totalPrice = items.reduce((sum, item) => {
+      const itemPrice = item.product.price;
+      const itemQuantity = item.quantity;
+      if (typeof itemPrice !== 'number' || typeof itemQuantity !== 'number') {
         throw new Error(`Invalid item structure: ${JSON.stringify(item)}`);
       }
+      return sum + itemPrice * itemQuantity;
+    }, 0);
 
+    // Convert shippingDetails object to a string for shippingAddress
+    const shippingAddress = `${shippingDetails.fullName}, ${shippingDetails.email}, ${shippingDetails.phone}, ${shippingDetails.address}, ${shippingDetails.city}, ${shippingDetails.state}, ${shippingDetails.pincode}`;
+
+    // Create order in the database
+    const order = new Order({
+      user: req.user._id,
+      items: items.map(item => ({
+        product: item.product._id,
+        name: item.product.name,
+        price: item.product.price,
+        quantity: item.quantity,
+      })),
+      shippingAddress,
+      totalPrice,
+      paymentStatus: 'pending',
+      orderStatus: 'Pending',
+    });
+
+    await order.save();
+
+    const lineItems = items.map(item => {
       const unitAmount = Math.round(item.product.price * 100);
       if (isNaN(unitAmount) || unitAmount <= 0) {
         throw new Error(`Invalid price for product: ${item.product.name}`);
@@ -37,31 +64,9 @@ router.post('/create-session', protect, async (req, res) => {
           },
           unit_amount: unitAmount,
         },
-        quantity: parseInt(item.quantity),
+        quantity: item.quantity,
       };
     });
-
-    const total = items.reduce(
-      (sum, item) => sum + item.product.price * item.quantity,
-      0
-    );
-
-    // Create the order in the database
-    const order = new Order({
-      user: req.user._id,
-      items: items.map((item) => ({
-        product: item.product._id,
-        name: item.product.name,
-        price: item.product.price,
-        quantity: item.quantity,
-      })),
-      shippingDetails,
-      total,
-      paymentStatus: 'pending',
-      stripeSessionId: null, // Will be updated after session creation
-    });
-
-    await order.save();
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -72,7 +77,6 @@ router.post('/create-session', protect, async (req, res) => {
       metadata: {
         userId: req.user._id.toString(),
         orderId: order._id.toString(),
-        shippingDetails: JSON.stringify(shippingDetails),
       },
     });
 
@@ -80,16 +84,18 @@ router.post('/create-session', protect, async (req, res) => {
     order.stripeSessionId = session.id;
     await order.save();
 
-    console.log('Stripe session created successfully:', session.id);
+    // Clear the cart after successful session creation
+    await Cart.findOneAndDelete({ user: req.user._id });
 
-    res.status(200).json({
+    console.log('Stripe session created successfully:', session.id);
+    res.status(200).json({ 
       sessionId: session.id,
       url: session.url,
       orderId: order._id.toString(),
     });
   } catch (error) {
     console.error('Stripe session creation error:', error);
-    res.status(500).json({
+    res.status(500).json({ 
       message: 'Error creating checkout session',
       error: error.message || 'Internal server error',
     });

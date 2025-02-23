@@ -2,10 +2,9 @@ const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 
-// Place an order
 const placeOrder = async (req, res) => {
   try {
-    const userId = req.user._id; // Use _id from protect middleware
+    const userId = req.user._id;
     const { shippingAddress } = req.body;
 
     if (!shippingAddress) {
@@ -47,18 +46,22 @@ const placeOrder = async (req, res) => {
       orderStatus: 'Pending',
     });
 
+   
     await Promise.all([
       ...cart.items.map(item =>
         Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: -item.quantity } })
       ),
-      Cart.findByIdAndDelete(cart._id),
+      Cart.findByIdAndDelete(cart._id), 
     ]);
 
     const populatedOrder = await Order.findById(newOrder._id)
       .populate('items.product')
       .populate('user', 'name email');
 
-    res.status(201).json(populatedOrder);
+    res.status(201).json({
+      order: populatedOrder,
+      cartCleared: true, 
+    });
   } catch (error) {
     console.error('Place order error:', error.stack);
     res.status(500).json({ 
@@ -68,7 +71,6 @@ const placeOrder = async (req, res) => {
   }
 };
 
-// Get all orders for a user
 const getOrders = async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user._id })

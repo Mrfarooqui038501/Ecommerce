@@ -1,15 +1,23 @@
-// controllers/cartController.js
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
+const User = require('../models/User');
+const mongoose = require('mongoose');
 
 exports.addToCart = async (req, res) => {
-  // Start a MongoDB session for transaction
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const userId = req.user.id;
+    const userId = req.user.id; 
     const { productId, quantity = 1 } = req.body;
+
+   
+    const user = await User.findById(userId).session(session);
+    if (!user) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: 'User not found' });
+    }
+    const userIdString = user.userId; 
 
     const product = await Product.findById(productId).session(session);
     if (!product) {
@@ -43,15 +51,13 @@ exports.addToCart = async (req, res) => {
       }
       existingItem.quantity = newQuantity;
     } else {
-      cart.items.push({ product: productId, quantity });
+      cart.items.push({ product: productId, quantity, userId: userIdString });
     }
 
-    // Decrease the product quantity
     product.quantity -= quantity;
     await product.save({ session });
     await cart.save({ session });
     
-    // Commit the transaction
     await session.commitTransaction();
     
     const populatedCart = await Cart.findById(cart._id)
@@ -64,8 +70,8 @@ exports.addToCart = async (req, res) => {
     res.status(200).json({ items: populatedCart.items, total });
   } catch (error) {
     await session.abortTransaction();
-    console.error('Add to cart error:', error);
-    res.status(500).json({ message: 'Server Error' });
+    console.error('Add to cart error:', error.stack);
+    res.status(500).json({ message: 'Server Error', error: error.message });
   } finally {
     session.endSession();
   }
@@ -85,7 +91,8 @@ exports.getCart = async (req, res) => {
     
     res.status(200).json({ items: cart.items, total });
   } catch (error) {
-    res.status(500).json({ message: 'Server Error' });
+    console.error('Get cart error:', error.stack);
+    res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
 
@@ -96,6 +103,11 @@ exports.updateCartItem = async (req, res) => {
   try {
     const cart = await Cart.findOne({ user: req.user.id }).session(session);
     const { quantity } = req.body;
+
+    if (!cart) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: 'Cart not found' });
+    }
     
     const itemIndex = cart.items.findIndex(item => 
       item.product.toString() === req.params.productId
@@ -112,23 +124,24 @@ exports.updateCartItem = async (req, res) => {
         });
       }
 
-      // Update product quantity
       product.quantity -= quantityDiff;
       await product.save({ session });
 
-      // Update cart item quantity
       cart.items[itemIndex].quantity = quantity;
       await cart.save({ session });
 
       await session.commitTransaction();
-      res.status(200).json(cart);
+      const populatedCart = await Cart.findById(cart._id)
+        .populate('items.product');
+      res.status(200).json(populatedCart);
     } else {
       await session.abortTransaction();
       res.status(404).json({ message: 'Item not found' });
     }
   } catch (error) {
     await session.abortTransaction();
-    res.status(500).json({ message: 'Server Error' });
+    console.error('Update cart error:', error.stack);
+    res.status(500).json({ message: 'Server Error', error: error.message });
   } finally {
     session.endSession();
   }
@@ -140,31 +153,37 @@ exports.removeFromCart = async (req, res) => {
 
   try {
     const cart = await Cart.findOne({ user: req.user.id }).session(session);
+    if (!cart) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: 'Cart not found' });
+    }
+
     const itemToRemove = cart.items.find(item => 
       item.product.toString() === req.params.productId
     );
 
     if (itemToRemove) {
-      // Return quantity back to product
       const product = await Product.findById(req.params.productId).session(session);
       product.quantity += itemToRemove.quantity;
       await product.save({ session });
 
-      // Remove item from cart
       cart.items = cart.items.filter(item => 
         item.product.toString() !== req.params.productId
       );
       
       await cart.save({ session });
       await session.commitTransaction();
-      res.status(200).json(cart);
+      const populatedCart = await Cart.findById(cart._id)
+        .populate('items.product');
+      res.status(200).json(populatedCart);
     } else {
       await session.abortTransaction();
       res.status(404).json({ message: 'Item not found in cart' });
     }
   } catch (error) {
     await session.abortTransaction();
-    res.status(500).json({ message: 'Server Error' });
+    console.error('Remove from cart error:', error.stack);
+    res.status(500).json({ message: 'Server Error', error: error.message });
   } finally {
     session.endSession();
   }

@@ -20,7 +20,7 @@ const ProductList = () => {
   useEffect(() => {
     fetchProducts();
     checkAdminStatus();
-    // Set up real-time updates
+    
     const interval = setInterval(fetchProducts, 5000);
     return () => clearInterval(interval);
   }, []);
@@ -112,7 +112,7 @@ const ProductList = () => {
         }
       );
       
-      // Update product quantity locally
+      
       setProducts(prevProducts =>
         prevProducts.map(product =>
           product._id === productId
