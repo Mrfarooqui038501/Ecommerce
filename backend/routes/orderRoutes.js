@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
-const Order = require('../models/Order');
+const { getOrders, placeOrder } = require('../controllers/orderController');
 
+router.get('/', protect, getOrders);
+router.post('/place', protect, placeOrder);
 router.get('/session/:sessionId', protect, async (req, res) => {
   try {
+    const Order = require('../models/Order');
     const order = await Order.findOne({ stripeSessionId: req.params.sessionId }).populate('user', 'name email');
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });

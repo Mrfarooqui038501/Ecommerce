@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Package, User, LogIn, UserPlus, Home } from 'lucide-react';
+import { ShoppingCart, Package, LogIn, UserPlus, Home } from 'lucide-react';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -40,11 +40,6 @@ const Header = () => {
                 </Link>
                 
                 <div className="flex items-center space-x-4">
-                  <Link to="/profile" className="flex items-center space-x-1 text-gray-700 hover:text-blue-600">
-                    <User size={20} />
-                    <span>Profile</span>
-                  </Link>
-                  
                   <button
                     onClick={handleLogout}
                     className="flex items-center space-x-1 text-gray-700 hover:text-blue-600"

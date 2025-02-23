@@ -10,17 +10,10 @@ const orderSchema = new mongoose.Schema({
       quantity: { type: Number, required: true },
     },
   ],
-  shippingDetails: {
-    fullName: { type: String, required: true },
-    email: { type: String, required: true },
-    phone: { type: String, required: true },
-    address: { type: String, required: true },
-    city: { type: String, required: true },
-    state: { type: String, required: true },
-    pincode: { type: String, required: true },
-  },
-  total: { type: Number, required: true },
+  shippingAddress: { type: String, required: true }, // Changed to string to match controller
+  totalPrice: { type: Number, required: true }, // Renamed from total to match controller
   paymentStatus: { type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' },
+  orderStatus: { type: String, default: 'Pending' }, // Added as used in controller
   stripeSessionId: { type: String },
   createdAt: { type: Date, default: Date.now },
 });

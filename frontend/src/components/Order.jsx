@@ -15,11 +15,9 @@ const Orders = () => {
 
   useEffect(() => {
     fetchOrders();
-    // Check if we're coming from a successful order placement
     if (location.state?.success) {
       setShowSuccess(true);
       setSuccess('Order placed successfully!');
-      // Clear the success state after 3 seconds
       setTimeout(() => {
         setSuccess('');
         setShowSuccess(false);
@@ -31,17 +29,20 @@ const Orders = () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        throw new Error('Authentication required');
+        setError('Authentication required');
+        setTimeout(() => navigate('/login'), 2000);
+        return;
       }
 
       const response = await axios.get('http://localhost:5000/api/orders', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
+      console.log('Fetched orders:', response.data); // Debug log
       setOrders(response.data);
       setError('');
     } catch (err) {
-      console.error('Error fetching orders:', err);
+      console.error('Error fetching orders:', err.response?.data || err);
       setError(err.response?.data?.message || 'Failed to fetch orders');
     } finally {
       setLoading(false);
@@ -56,7 +57,9 @@ const Orders = () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        throw new Error('Authentication required');
+        setError('Authentication required');
+        setTimeout(() => navigate('/login'), 2000);
+        return;
       }
 
       const response = await axios.post(
@@ -69,12 +72,12 @@ const Orders = () => {
         setSuccess('Order placed successfully!');
         setShowSuccess(true);
         setShowPlaceOrder(false);
-        fetchOrders(); // Refresh orders list
+        fetchOrders();
         setShippingAddress('');
         navigate('/orders', { state: { success: true } });
       }
     } catch (err) {
-      console.error('Error placing order:', err);
+      console.error('Error placing order:', err.response?.data || err);
       setError(err.response?.data?.message || 'Failed to place order');
     } finally {
       setLoading(false);
@@ -106,7 +109,6 @@ const Orders = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      {/* Error and Success Messages */}
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           {error}
@@ -118,7 +120,6 @@ const Orders = () => {
         </div>
       )}
 
-      {/* Place Order Form */}
       {showPlaceOrder ? (
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-6">Place New Order</h2>
@@ -167,7 +168,6 @@ const Orders = () => {
         </div>
       )}
 
-      {/* Orders List */}
       {!showPlaceOrder && (
         <div className="space-y-6">
           {orders.length === 0 ? (
@@ -196,7 +196,7 @@ const Orders = () => {
                     </p>
                   </div>
                   <p className="text-xl font-bold">
-                    ₹{order.totalPrice.toFixed(2)}
+                    ₹{order.totalPrice ? order.totalPrice.toFixed(2) : 'N/A'} {/* Fallback for undefined */}
                   </p>
                 </div>
                 
@@ -205,14 +205,14 @@ const Orders = () => {
                     <div key={item._id} className="flex justify-between items-center">
                       <div>
                         <p className="font-medium">
-                          {item.product?.name}
+                          {item.product?.name || 'Unknown Product'}
                         </p>
                         <p className="text-sm text-gray-500">
                           Quantity: {item.quantity}
                         </p>
                       </div>
                       <p className="font-medium">
-                        ₹{(item.price * item.quantity).toFixed(2)}
+                        ₹{(item.price && item.quantity) ? (item.price * item.quantity).toFixed(2) : 'N/A'} {/* Fallback */}
                       </p>
                     </div>
                   ))}
@@ -220,7 +220,7 @@ const Orders = () => {
                 
                 <div className="mt-4 pt-4 border-t">
                   <p className="text-gray-600">
-                    Shipping Address: {order.shippingAddress}
+                    Shipping Address: {order.shippingAddress || 'Not provided'}
                   </p>
                 </div>
               </div>

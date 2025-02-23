@@ -29,14 +29,27 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Create new user
+    // Create new user without userId initially
     user = new User({
       name,
       email,
-      password
+      password, // Middleware will hash this
     });
 
+    // Save user (initial save without userId)
     await user.save();
+    console.log('User saved successfully:', { id: user._id });
+
+    // Generate and assign userId after successful save
+    const userId = await User.generateUserId();
+    user.userId = userId;
+    await user.save(); // Save again with userId
+    console.log('User updated with userId:', userId);
+
+    // Check JWT_SECRET
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not defined in environment variables');
+    }
 
     // Create token
     const token = jwt.sign(
@@ -49,15 +62,16 @@ exports.register = async (req, res) => {
       token,
       user: {
         id: user._id,
+        userId: user.userId,
         name: user.name,
-        email: user.email
-      }
+        email: user.email,
+      },
     });
-
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('Registration error:', error.stack);
     res.status(500).json({ 
-      message: 'Server error during registration' 
+      message: 'Server error during registration',
+      error: error.message,
     });
   }
 };
@@ -66,14 +80,12 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate input
     if (!email || !password) {
       return res.status(400).json({ 
         message: 'Please provide both email and password' 
       });
     }
 
-    // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ 
@@ -81,7 +93,6 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Check password
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       return res.status(400).json({ 
@@ -89,27 +100,30 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Create token
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not defined in environment variables');
+    }
+
     const token = jwt.sign(
       { id: user._id }, 
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
 
-    // Send response
     res.status(200).json({
       token,
       user: {
         id: user._id,
+        userId: user.userId || 'Not assigned yet', // Handle existing users without userId
         name: user.name,
-        email: user.email
-      }
+        email: user.email,
+      },
     });
-
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Login error:', error.stack);
     res.status(500).json({ 
-      message: 'Server error during login' 
+      message: 'Server error during login',
+      error: error.message,
     });
   }
 };

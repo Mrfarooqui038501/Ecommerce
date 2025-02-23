@@ -1,20 +1,22 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const Register = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: ''
+    password: '',
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const navigate = useNavigate();
 
   const { name, email, password } = formData;
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError(''); // Clear error when user types
+    setError('');
   };
 
   const handleSubmit = async (e) => {
@@ -23,27 +25,32 @@ const Register = () => {
     setSuccess('');
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/register', 
+      const response = await axios.post(
+        'http://localhost:5000/api/auth/register',
         { name, email, password },
         {
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         }
       );
 
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
-        setSuccess('Registration successful!');
-        // Redirect after successful registration
-        window.location.href = '/login';
+        localStorage.setItem('userId', response.data.user.userId);
+        localStorage.setItem('userName', response.data.user.name);
+        setSuccess(
+          `Registration successful! Your User ID is: ${response.data.user.userId}`
+        );
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
       }
     } catch (error) {
-      setError(
-        error.response?.data?.message || 
-        'Registration failed. Please try again.'
-      );
-      console.error('Registration error:', error.response?.data);
+      const errorMsg = error.response?.data?.message || 'Registration failed. Please try again.';
+      const errorDetail = error.response?.data?.error || '';
+      setError(`${errorMsg}${errorDetail ? ': ' + errorDetail : ''}`);
+      console.error('Registration error:', error.response?.data || error);
     }
   };
 
@@ -63,41 +70,41 @@ const Register = () => {
       <form onSubmit={handleSubmit} className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
         <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2">Name</label>
-          <input 
+          <input
             type="text"
-            name="name" 
-            value={name} 
-            onChange={handleChange} 
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" 
+            name="name"
+            value={name}
+            onChange={handleChange}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
             required
             minLength="2"
           />
         </div>
         <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2">Email</label>
-          <input 
+          <input
             type="email"
-            name="email" 
-            value={email} 
-            onChange={handleChange} 
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" 
+            name="email"
+            value={email}
+            onChange={handleChange}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
             required
           />
         </div>
         <div className="mb-6">
           <label className="block text-gray-700 text-sm font-bold mb-2">Password</label>
-          <input 
+          <input
             type="password"
-            name="password" 
-            value={password} 
-            onChange={handleChange} 
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" 
+            name="password"
+            value={password}
+            onChange={handleChange}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
             required
             minLength="6"
           />
         </div>
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
         >
           Register
