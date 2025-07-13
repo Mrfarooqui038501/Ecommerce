@@ -39,7 +39,7 @@ const Cart = () => {
         return;
       }
 
-      const response = await axios.get('https://ecommerce-vzc6.onrender.com/api/cart', {
+      const response = await axios.get('http://localhost:5000/api/cart', {
         headers: { Authorization: `Bearer ${token}` },
       });
 

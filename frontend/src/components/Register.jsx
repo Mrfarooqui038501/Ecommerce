@@ -26,7 +26,7 @@ const Register = () => {
 
     try {
       const response = await axios.post(
-        'https://ecommerce-vzc6.onrender.com/api/auth/register',
+        'http://localhost:5000/api/auth/register',
         { name, email, password },
         {
           headers: {

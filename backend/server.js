@@ -10,7 +10,7 @@ const app = express();
 
 
 app.use(cors({
-  origin: 'https://ecommerce-arman.netlify.app/register',
+  origin: 'http://localhost:5173',
   credentials: true
 }));
 
