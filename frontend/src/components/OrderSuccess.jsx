@@ -29,7 +29,7 @@ const OrderSuccess = () => {
           return;
         }
 
-        const response = await axios.get(`http://localhost:5000/api/orders/session/${sessionId}`, {
+        const response = await axios.get(`https://ecommerce-vzc6.onrender.com/api/orders/session/${sessionId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
