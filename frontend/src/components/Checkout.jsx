@@ -24,7 +24,7 @@ const Checkout = ({ cart, setCart }) => {
       }
 
       const response = await axios.post(
-        'http://localhost:5000/api/orders/place',
+        'https://ecommerce-i6ct.onrender.com/api/orders/place',
         { shippingAddress },
         { headers: { Authorization: `Bearer ${token}` } }
       );

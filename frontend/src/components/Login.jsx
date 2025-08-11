@@ -25,7 +25,7 @@ const Login = () => {
 
     try {
       const response = await axios.post(
-        'http://localhost:5000/api/auth/login',
+        'https://ecommerce-i6ct.onrender.com/api/auth/login',
         { email, password },
         {
           headers: {

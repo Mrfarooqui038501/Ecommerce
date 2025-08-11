@@ -17,7 +17,7 @@ const Header = () => {
         <nav className="flex items-center justify-between h-16">
           {/* Logo/Brand */}
           <Link to="/" className="flex items-center space-x-2">
-            <span className="text-2xl font-bold text-blue-600">ShopApp</span>
+            <span className="text-2xl font-bold text-blue-600">Ecommerce</span>
           </Link>
 
           {/* Navigation Links */}

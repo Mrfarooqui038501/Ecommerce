@@ -34,7 +34,7 @@ const Orders = () => {
         return;
       }
 
-      const response = await axios.get('http://localhost:5000/api/orders', {
+      const response = await axios.get('https://ecommerce-i6ct.onrender.com/api/orders', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -63,7 +63,7 @@ const Orders = () => {
       }
 
       const response = await axios.post(
-        'http://localhost:5000/api/orders/place',
+        'https://ecommerce-i6ct.onrender.com/api/orders/place',
         { shippingAddress },
         { headers: { Authorization: `Bearer ${token}` } }
       );
